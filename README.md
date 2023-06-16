@@ -6,8 +6,11 @@ This is meant to be a collection of notes o  the basics of Reinforcement Learnin
 1. [Basic Terms and Notation](#chap1)
 2. [The RL Problem](#chap2)
 3. [Bellman Equations](#chap3)
+4. [Types of RL Algorithms](#chap4)
+5. [Policy Optimization](#chap5)
 
 
+---
 ---
 ## Basic Terms and Notation <a href="chap1"></a>
 
@@ -55,6 +58,7 @@ $G_{t} = \sum_{k=0}^{\infty} \gamma^{k}r_{t+k+1}$
 
 Where $\gamma$ is the discount factor. The discount factor is a value between 0 and 1 that determines how much the agent values future rewards. A discount factor of 0 means that the agent only cares about the immediate reward and a discount factor of 1 means that the agent cares about all future rewards equally.
 
+---
 ---
 ## The RL Problem <a href="chap2"></a>
 
@@ -109,7 +113,7 @@ The state value function can also be written in terms of the action value functi
 
 $V_{\pi}(s) = \sum_{a} \pi(a|s)Q_{\pi}(s, a)$
 
-
+---
 ---
 ## Bellman Equations <a href="chap3"></a>
 
@@ -146,5 +150,80 @@ $$v = (1 - \gamma P)^{-1}R$$
 
 <strong>Bellman Equation for state value function (in terms of state-action value function):</strong>
 
-$$V_{\pi}(s) = \sum_{a} \pi(a|s)\sum_{s'}P^{a}_{ss'}(r(s,a) + \gamma V_{\pi}(s')$$
+$$V_{\pi}(s) = \sum_{a} \pi(a|s)\sum_{s'}P^{a}_{ss'}(r(s,a) + \gamma V_{\pi}(s'))$$
+
+<strong>Bellman Equation for action value function (in terms of state value function):</strong>
+
+$$Q_{\pi}(s,a) = \sum_{s'} P^{a}_{ss'}(r(s,a) + \gamma \sum_{a'} \pi(a'|s')Q_{\pi}(s',a'))$$
+
+This can further be simplified to:
+
+$$Q_{\pi}(s,a) = \sum_{s'} P^{a}_{ss'}(r(s,a) + \gamma V_{\pi}(s'))$$
+
+<strong>Bellman Optimality Equations: </strong> The Bellman optimality equations are the Bellman equations for the optimal value functions. The optimal value functions are the maximum value functions over all policies. The optimal policy is the policy that maximizes the value function. The Bellman optimality equations are as follows:
+
+$$V_{*}(s) = max_{a} \sum_{s'} P^{a}_{ss'}(r(s,a) + \gamma V_{*}(s'))$$
+
+$$Q_{*}(s,a) = \sum_{s'} P^{a}_{ss'}(r(s,a) + \gamma max_{a'}Q_{*}(s',a'))$$
+
+---
+---
+## Types of RL Algorithms <a href="chap4"></a>
+
+RL algorithms are classified as either <strong>model-free</strong> or <strong>model-based</strong> algorithms. A model of the environment is essentially a function which can predict the state transitions and the rewards. 
+
+The main advantage of model-based algorithms is that it allows the agent to plan ahead. However the ground-truth model of the environment is usually not avialable to the agent and hence it must learn this model from experience. 
+
+<strong>Policy Optimization: </strong> In this method the parameters $\theta$ of the policy $\pi_{\theta}(a|s)$ are optimized to maximize the expected return $J(\pi_{\theta})$ through either gradient ascent or indirectly by maximizing a local approximation of $J(\pi_{\theta})$. It also usually involves learning a value function $V_{\phi}(s)$ or $Q_{\phi}(s,a)$ to reduce the variance of the policy gradient estimator, which gets used in figuring out how to update the policy.
+
+<strong>Q-Learning: </strong> The agent learns the optimal action-value function $Q^{*}(s,a)$ directly without learning the policy $\pi(a|s)$. The agent uses the action-value function to select the optimal action at each step. The agent learns the optimal action-value function by using the Bellman optimality equation as an iterative update. An approximator $Q_{\theta}(s,a)$ is learned for $Q_{*}(s,a)$ and the action taken by the Q-learning agent is given by:
+
+$$a_{t} = argmax_{a}Q_{\theta}(s_{t},a)$$
+
+---
+---
+## Policy Optimization <a href="chap5"></a>
+
+The aim of policy optimization is to maximize the the expected return $J(\pi_{\theta}) = E_{\tau \thicksim \pi _{\theta}}[R(\tau)]$
+
+We can optimize the policy by gradient ascent as foollows: 
+
+$$\theta_{t+1} = \theta_{t} + \alpha \nabla_{\theta}J(\pi_{\theta})$$
+
+Where $\alpha$ is the learning rate.
+
+Some important notations, theorems and formulae that will be used are as follows:
+
+1. <strong>Probability of Trajectory: </strong> The probability of a trajectory $\tau$ is given by:
+
+$$P(\tau) = P(s_{0})\prod_{t=0}^{T}\pi_{\theta}(a_{t}|s_{t})P(s_{t+1}|s_{t},a_{t})$$
+
+2. <strong>The Log Probability Trick: </strong> Making use of the chain rule we can write:
+
+$$\nabla_{\theta}P(\tau) = P(\tau)\nabla_{\theta}logP(\tau)$$
+
+3. <strong>Gradients of Environment Functions: </strong> The environment has no dependence on $\theta$ and hence the gradients of $\rho(s_0), P(t+1|s_t,a_t)$ and $R(\tau)$ are zero.
+
+4. <strong>The Log Probability of a Trajectory: </strong> 
+
+$$log P(\tau|\theta) = log P(s_{0}) + \sum_{t=0}^{T}(log\pi_{\theta}(a_{t}|s_{t}) + logP(s_{t+1}|s_{t},a_{t}))$$
+
+5. <strong>Gradient Log Probability of a Trajectory: </strong> 
+
+$$\nabla_{\theta}logP(\tau|\theta) = \sum_{t=0}^{T}\nabla_{\theta}log\pi_{\theta}(a_{t}|s_{t})$$
+
+Using the above formulae we can derive the basic policy gradient algorithm as follows:
+
+$$\nabla_{\theta}J(\pi_{\theta}) = \nabla_{\theta}E_{\tau \thicksim \pi_\theta}[R(\tau)]$$
+$$ = \nabla_{\theta}\int_{\tau}P(\tau)R(\tau)$$
+$$ = \int_{\tau}\nabla_{\theta}P(\tau)R(\tau)$$
+$$ = \int_{\tau}P(\tau)\nabla_{\theta}logP(\tau)R(\tau)$$
+$$ = E_{\tau \thicksim \pi_\theta}[\nabla_{\theta}logP(\tau)R(\tau)]$$
+
+Since we are calculating the expectation, we can estimate it using a sample mean. We can collect a set of trajectories $D = \{\tau_i\}_{i=1,2,...N}$
+
+Hence the policy gradient update rule becomes:
+
+$$\nabla_{\theta}J(\pi_{\theta}) = \frac{1}{|D|}\sum_{\tau \epsilon D}\sum_{t=0}^{T}\nabla_{\theta}log\pi_{\theta}(a_{t}|s_{t})R(\tau)$$
+
 
